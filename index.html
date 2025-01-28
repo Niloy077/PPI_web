@@ -24,23 +24,30 @@
 
     <!-- Main Content -->
     <main>
-        <div class="container">
+        <div id="app" class="container">
             <div class="input-section">
+                <!-- PDB Input Section -->
                 <div class="box">
-                    <h3>PDB ID Input</h3>
-                    <input type="text" placeholder="Enter PDB ID" class="input-field">
-                    <button class="btn">Submit</button>
+                    <h3>PDB File Upload</h3>
+                    <input type="file" id="pdb-input" accept=".pdb" class="input-field">
+                    <button id="pdb-submit" class="btn" disabled>Submit</button>
+                    <p id="pdb-uploaded">No file uploaded</p>
                 </div>
+                <!-- FASTA Input Section -->
                 <div class="box">
                     <h3>FASTA Input</h3>
-                    <textarea placeholder="Enter FASTA sequence" class="input-area"></textarea>
-                    <button class="btn">Submit</button>
+                    <textarea 
+                        placeholder="Enter FASTA sequence" 
+                        id="fasta-input" 
+                        class="input-area">
+                    </textarea>
+                    <button id="fasta-submit" class="btn" disabled>Submit</button>
+                    <p id="fasta-validation" class="error-message">Invalid FASTA sequence!</p>
                 </div>
             </div>
             <div class="output-section box">
                 <h3>Output</h3>
                 <div class="output-display">
-                    <!-- This is where the output will show -->
                     <p>No output yet</p>
                 </div>
             </div>
@@ -52,5 +59,8 @@
         <hr class="divider">
         <p>&copy; 2025 PPI Predictor. All rights reserved.</p>
     </footer>
+
+    <script src="https://unpkg.com/vue@3"></script>
+    <script src="static/js/app.js"></script>
 </body>
 </html>

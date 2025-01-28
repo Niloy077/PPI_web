@@ -25,14 +25,9 @@ body {
 
 /* Logo Styling */
 .logo img {
-    height: 100px; /* Adjust height to fit the navbar */
-    max-width: 100%; /* Ensure responsiveness */
-    object-fit: contain; /* Ensure the image is not distorted */
-}
-
-.logo {
-    font-size: 1.5rem;
-    font-weight: bold;
+    height: 80px;
+    max-width: 100%;
+    object-fit: contain;
 }
 
 .nav-links {
@@ -112,7 +107,12 @@ body {
     text-align: center;
 }
 
-.btn:hover {
+.btn:disabled {
+    background-color: #9d9999;
+    cursor: not-allowed;
+}
+
+.btn:hover:not(:disabled) {
     background-color: #004494;
 }
 
@@ -138,4 +138,11 @@ footer {
     background-color: #0056b3;
     color: white;
     margin-top: 20px;
+}
+
+/* Error Message */
+.error-message {
+    color: red;
+    font-size: 0.9rem;
+    display: none;
 }
