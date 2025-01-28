@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PPI Predictor</title>
+    <link rel="stylesheet" href="D:\CSE499\PPI_web\style.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <header>
+        <div class="navbar">
+            <div class="logo">
+              <img src="D:\CSE499\PPI_web\logo.png" alt="PPI Predictor Logo">
+            </div>
+            <ul class="nav-links">
+                <li><a href="#">Home</a></li>
+                <li><a href="#">About</a></li>
+                <li><a href="#">Result Example</a></li>
+            </ul>
+        </div>
+        <hr class="divider">
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <div class="container">
+            <div class="input-section">
+                <div class="box">
+                    <h3>PDB ID Input</h3>
+                    <input type="text" placeholder="Enter PDB ID" class="input-field">
+                    <button class="btn">Submit</button>
+                </div>
+                <div class="box">
+                    <h3>FASTA Input</h3>
+                    <textarea placeholder="Enter FASTA sequence" class="input-area"></textarea>
+                    <button class="btn">Submit</button>
+                </div>
+            </div>
+            <div class="output-section box">
+                <h3>Output</h3>
+                <div class="output-display">
+                    <!-- This is where the output will show -->
+                    <p>No output yet</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <hr class="divider">
+        <p>&copy; 2025 PPI Predictor. All rights reserved.</p>
+    </footer>
+</body>
+</html>
