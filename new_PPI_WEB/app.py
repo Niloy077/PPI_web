@@ -40,6 +40,7 @@ DEFAULT_PDB_FILES = {
     "Protein 4 (9J82)": "https://files.rcsb.org/download/9J82.pdb"
 }
 
+# Function to fetch PDB from URL
 def fetch_pdb_from_url(url):
     response = requests.get(url)
     if response.status_code == 200:
@@ -48,6 +49,7 @@ def fetch_pdb_from_url(url):
         st.error(f"Failed to fetch PDB from {url}")
         return None
 
+# Streamlit UI
 st.title("🔬 Protein Embedding Visualizer")
 st.subheader("Compare protein structures effortlessly! 🚀")
 st.write("Upload your own **PDB files**, or select from our default proteins.")
@@ -58,37 +60,34 @@ use_default = st.checkbox("Use default PDB files")
 
 if use_default:
     selected_pdbs = st.multiselect("Select default proteins:", list(DEFAULT_PDB_FILES.keys()))  
-    uploaded_files = uploaded_files or []  
-    uploaded_files.extend([fetch_pdb_from_url(DEFAULT_PDB_FILES[pdb]) for pdb in selected_pdbs])  
-
+    if selected_pdbs:
+        default_files = [fetch_pdb_from_url(DEFAULT_PDB_FILES[pdb]) for pdb in selected_pdbs]
+        uploaded_files = uploaded_files or []  # Ensure uploaded_files is a list
+        uploaded_files.extend(filter(None, default_files))  # Remove failed fetches
 
 if uploaded_files:
     embeddings_list = []
     protein_names = []
 
-for file in uploaded_files:
-    # Read PDB file from user upload or default file
-    if isinstance(file, str):  # Default PDB (path as string)
-        pdb_file_path = file
-    else:  # Uploaded PDB file
-        pdb_content = file.read()
-        
-        # Ensure we handle both uploaded files and default files correctly
-        if isinstance(pdb_content, bytes):  # If binary, decode it
-            pdb_content = pdb_content.decode("latin-1")
+    for file in uploaded_files:
+        # Read PDB file from user upload or default file
+        if isinstance(file, io.StringIO):  # Default PDB file fetched from URL
+            pdb_io = file
+        else:  # Uploaded PDB file
+            pdb_content = file.read()
+            if isinstance(pdb_content, bytes):  # If binary, decode it
+                pdb_content = pdb_content.decode("latin-1")
+            pdb_io = io.StringIO(pdb_content)
 
-        pdb_io = io.StringIO(pdb_content)  # Create a StringIO object
-
-        
         # Extract sequence
-        seq = extract_sequence_from_pdb(pdb_file_path)
-        protein_names.append(os.path.basename(file).replace(".pdb", ""))  # Extract protein name
-        
+        seq = extract_sequence_from_pdb(pdb_io)
+        protein_names.append(file.name.replace(".pdb", ""))  # Extract protein name
+
         # Compute embeddings
         inputs = tokenizer(seq, return_tensors="pt", add_special_tokens=True)
         with torch.no_grad():
             outputs = model(**inputs)
-        
+
         embedding = outputs.last_hidden_state.mean(dim=1).detach().numpy()  # Get protein-level embedding
         embeddings_list.append(embedding)
 
