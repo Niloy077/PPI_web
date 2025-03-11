@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 import io
+import os
 
 # Load ESM-2 Model & Tokenizer
 @st.cache_resource
@@ -33,28 +34,46 @@ def extract_sequence_from_pdb(pdb_file):
 # Default PDB files (Stored in a local folder "data/")
 DEFAULT_PDB_FILES = {
     "Protein 1 (1A3N)": "data/1a3n.pdb",
-    "Protein 2 (9J82)": "data/9j82.pdb",
+    "Protein 2 (4QQI)": "data/4qqi.pdb",
     "Protein 3 (2DN2)": "data/2dn2.pdb",
-    "Protein 4 (4QQI)": "data/4qqi.pdb"
+    "Protein 4 (9J82)": "data/9j82.pdb"
 }
-# Streamlit UI
-st.title("🔬 Protein Embedding Visualizer")
-st.write("Upload one or more PDB files to extract sequences and compute embeddings.")
 
-uploaded_files = st.file_uploader("Upload PDB Files", type=["pdb"], accept_multiple_files=True)
+# UI: Logo and Header
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    st.image("logo.png", width=150)  # Adjust width as needed
+
+st.title("🔬 Protein Embedding Visualizer")
+st.subheader("Compare protein structures effortlessly! 🚀")
+st.write("Upload your own **PDB files**, or select from our default proteins.")
+
+# User File Upload or Default Selection
+uploaded_files = st.file_uploader("📂 Upload PDB Files", type=["pdb"], accept_multiple_files=True)
+use_default = st.checkbox("Use default PDB files")
+
+if use_default:
+    selected_pdbs = st.multiselect("Select default proteins:", list(DEFAULT_PDB_FILES.keys()))  # Allow multiple selection
+    uploaded_files = uploaded_files or []  # Ensure it's a list
+    uploaded_files.extend([DEFAULT_PDB_FILES[pdb] for pdb in selected_pdbs])  # Append selected defaults
+
 
 if uploaded_files:
     embeddings_list = []
     protein_names = []
 
     for file in uploaded_files:
-        # Read PDB file from user upload
-        pdb_content = file.read()
-        pdb_io = io.StringIO(pdb_content.decode("utf-8"))
+        # Read PDB file from user upload or default file
+        if isinstance(file, str):  # Default PDB (path as string)
+            pdb_file_path = file
+        else:  # Uploaded PDB file
+            pdb_content = file.read()
+            pdb_io = io.StringIO(pdb_content.decode("utf-8"))
+            pdb_file_path = pdb_io
         
         # Extract sequence
-        seq = extract_sequence_from_pdb(pdb_io)
-        protein_names.append(file.name.replace(".pdb", ""))  # Extract protein name
+        seq = extract_sequence_from_pdb(pdb_file_path)
+        protein_names.append(os.path.basename(file).replace(".pdb", ""))  # Extract protein name
         
         # Compute embeddings
         inputs = tokenizer(seq, return_tensors="pt", add_special_tokens=True)
@@ -65,13 +84,16 @@ if uploaded_files:
         embeddings_list.append(embedding)
 
     # Convert embeddings to numpy array
-    embedding_matrix = np.vstack(embeddings_list)  # Shape: (num_proteins, embedding_size)
+    embedding_matrix = np.vstack(embeddings_list)
 
-    # Extract first two dimensions directly (assuming embeddings have at least 2 dimensions)
-    embedding_2d = embedding_matrix[:, :2]  
+    # Handle visualization for both single and multiple proteins
+    if embedding_matrix.shape[0] == 1:  
+        embedding_2d = np.hstack((embedding_matrix, np.zeros((1, 1))))  # Add a second dummy dimension for single protein
+    else:
+        embedding_2d = embedding_matrix[:, :2]
 
-    # Scatter plot of protein embeddings
-    fig, ax = plt.subplots(figsize=(8, 6))
+    # Scatter plot
+    fig, ax = plt.subplots()
     ax.scatter(embedding_2d[:, 0], embedding_2d[:, 1], c='blue', s=100)
 
     # Annotate protein names
