@@ -66,16 +66,19 @@ if uploaded_files:
     embeddings_list = []
     protein_names = []
 
-    for file in uploaded_files:
-        # Read PDB file from user upload or default file
-        if isinstance(file, str):  # Default PDB (path as string)
-            pdb_file_path = file
-        else:  # Uploaded PDB file
-            pdb_content = file.read()
-            try:
-                pdb_io = io.StringIO(pdb_content.decode("utf-8"))  # This fails if the file is binary
-            except AttributeError:  # If it's already a string
-                pdb_io = io.StringIO(pdb_content.decode("latin-1"))  # Use latin-1 as a fallback
+for file in uploaded_files:
+    # Read PDB file from user upload or default file
+    if isinstance(file, str):  # Default PDB (path as string)
+        pdb_file_path = file
+    else:  # Uploaded PDB file
+        pdb_content = file.read()
+        
+        # Ensure we handle both uploaded files and default files correctly
+        if isinstance(pdb_content, bytes):  # If binary, decode it
+            pdb_content = pdb_content.decode("latin-1")
+
+        pdb_io = io.StringIO(pdb_content)  # Create a StringIO object
+
         
         # Extract sequence
         seq = extract_sequence_from_pdb(pdb_file_path)
