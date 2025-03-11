@@ -33,12 +33,11 @@ def extract_sequence_from_pdb(pdb_file):
 
 # Default PDB files (Stored in a local folder "data/")
 DEFAULT_PDB_FILES = {
-    "Protein 1 (1A3N)": "data/1a3n.pdb",
-    "Protein 2 (4QQI)": "data/4qqi.pdb",
-    "Protein 3 (2DN2)": "data/2dn2.pdb",
-    "Protein 4 (9J82)": "data/9j82.pdb"
+    "Protein 1 (1A3N)": "https://files.rcsb.org/download/1A3N.pdb",
+    "Protein 2 (4QQI)": "https://files.rcsb.org/download/4QQI.pdb"
+    "Protein 3 (2DN2)": "https://files.rcsb.org/download/2DN2.pdb",
+    "Protein 4 (9J82)": "https://files.rcsb.org/download/9J82.pdb"
 }
-
 
 st.title("🔬 Protein Embedding Visualizer")
 st.subheader("Compare protein structures effortlessly! 🚀")
