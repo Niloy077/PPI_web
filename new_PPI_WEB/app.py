@@ -39,6 +39,14 @@ DEFAULT_PDB_FILES = {
     "Protein 4 (9J82)": "https://files.rcsb.org/download/9J82.pdb"
 }
 
+def fetch_pdb_from_url(url):
+    response = requests.get(url)
+    if response.status_code == 200:
+        return io.StringIO(response.text)  # Convert to file-like object
+    else:
+        st.error(f"Failed to fetch PDB from {url}")
+        return None
+
 st.title("🔬 Protein Embedding Visualizer")
 st.subheader("Compare protein structures effortlessly! 🚀")
 st.write("Upload your own **PDB files**, or select from our default proteins.")
@@ -48,9 +56,9 @@ uploaded_files = st.file_uploader("📂 Upload PDB Files", type=["pdb"], accept_
 use_default = st.checkbox("Use default PDB files")
 
 if use_default:
-    selected_pdbs = st.multiselect("Select default proteins:", list(DEFAULT_PDB_FILES.keys()))  # Allow multiple selection
-    uploaded_files = uploaded_files or []  # Ensure it's a list
-    uploaded_files.extend([DEFAULT_PDB_FILES[pdb] for pdb in selected_pdbs])  # Append selected defaults
+    selected_pdbs = st.multiselect("Select default proteins:", list(DEFAULT_PDB_FILES.keys()))  
+    uploaded_files = uploaded_files or []  
+    uploaded_files.extend([fetch_pdb_from_url(DEFAULT_PDB_FILES[pdb]) for pdb in selected_pdbs])  
 
 
 if uploaded_files:
