@@ -51,7 +51,7 @@ def fetch_pdb_from_url(url):
 
 # UI: Title and Upload Section
 st.title("🔬 Protein Embedding Visualizer")
-st.subheader("Compare protein structures effortlessly! 🚀")
+st.subheader("Visualize and compare protein embeddings. 🚀")
 st.write("Upload your own **PDB files**, or select from our default proteins.")
 
 # User File Upload or Default Selection
