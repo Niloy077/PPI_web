@@ -39,10 +39,6 @@ DEFAULT_PDB_FILES = {
     "Protein 4 (9J82)": "data/9j82.pdb"
 }
 
-# UI: Logo and Header
-col1, col2, col3 = st.columns([1, 2, 1])
-with col2:
-    st.image("logo.png", width=150)  # Adjust width as needed
 
 st.title("🔬 Protein Embedding Visualizer")
 st.subheader("Compare protein structures effortlessly! 🚀")
