@@ -7,6 +7,7 @@ import torch
 import matplotlib.pyplot as plt
 import io
 import os
+import requests
 
 # Load ESM-2 Model & Tokenizer
 @st.cache_resource
