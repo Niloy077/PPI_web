@@ -72,8 +72,10 @@ if uploaded_files:
             pdb_file_path = file
         else:  # Uploaded PDB file
             pdb_content = file.read()
-            pdb_io = io.StringIO(pdb_content.decode("utf-8"))
-            pdb_file_path = pdb_io
+            try:
+                pdb_io = io.StringIO(pdb_content.decode("utf-8"))  # This fails if the file is binary
+            except AttributeError:  # If it's already a string
+                pdb_io = io.StringIO(pdb_content.decode("latin-1"))  # Use latin-1 as a fallback
         
         # Extract sequence
         seq = extract_sequence_from_pdb(pdb_file_path)
