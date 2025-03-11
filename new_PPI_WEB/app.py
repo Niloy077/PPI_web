@@ -32,7 +32,7 @@ def extract_sequence_from_pdb(pdb_file):
                     seq += seq1(residue.get_resname())
     return seq
 
-# Default PDB files (Stored as URLs)
+# Default PDB files (Stored online)
 DEFAULT_PDB_FILES = {
     "Protein 1 (1A3N)": "https://files.rcsb.org/download/1A3N.pdb",
     "Protein 2 (4QQI)": "https://files.rcsb.org/download/4QQI.pdb",
@@ -40,19 +40,25 @@ DEFAULT_PDB_FILES = {
     "Protein 4 (9J82)": "https://files.rcsb.org/download/9J82.pdb"
 }
 
-# Function to fetch PDB from URL
-def fetch_pdb_from_url(url):
+# Fetch PDB file from URL
+def fetch_pdb_from_url(url, name):
     response = requests.get(url)
     if response.status_code == 200:
-        return io.StringIO(response.text)  # Convert to file-like object
+        pdb_file = io.StringIO(response.text)  # Convert to file-like object
+        pdb_file.name = name + ".pdb"  # Manually set a name attribute
+        return pdb_file
     else:
         st.error(f"Failed to fetch PDB from {url}")
         return None
 
-# UI: Title and Upload Section
+# UI: Logo and Header
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    st.image("logo.png", width=150)  # Adjust width as needed
+
 st.title("🔬 Protein Embedding Visualizer")
-st.subheader("Visualize and compare protein embeddings. 🚀")
-st.write("Upload your own **PDB files**, or select from our default proteins.")
+st.subheader("Analyze and compare protein structures efficiently.")
+st.write("Upload your own **PDB files**, or select from our default dataset.")
 
 # User File Upload or Default Selection
 uploaded_files = st.file_uploader("📂 Upload PDB Files", type=["pdb"], accept_multiple_files=True)
@@ -60,35 +66,48 @@ use_default = st.checkbox("Use default PDB files")
 
 if use_default:
     selected_pdbs = st.multiselect("Select default proteins:", list(DEFAULT_PDB_FILES.keys()))  
-    if selected_pdbs:
-        fetched_files = [fetch_pdb_from_url(DEFAULT_PDB_FILES[pdb]) for pdb in selected_pdbs]
-        uploaded_files = uploaded_files or []  # Ensure list is initialized
-        uploaded_files.extend([f for f in fetched_files if f])  # Add only successful fetches
+    uploaded_files = uploaded_files or []  
 
+    for pdb_name in selected_pdbs:
+        pdb_file = fetch_pdb_from_url(DEFAULT_PDB_FILES[pdb_name], pdb_name)
+        if pdb_file:
+            uploaded_files.append(pdb_file)  # Append fetched PDB file
+
+# Process selected/uploaded files
 if uploaded_files:
     embeddings_list = []
     protein_names = []
 
     for file in uploaded_files:
         # Read PDB file from user upload or default file
-        if isinstance(file, io.StringIO):  # Default PDB file fetched from URL
-            pdb_io = file
-            protein_names.append("Default Protein")  # Assign a generic name
-        else:  # Uploaded PDB file
+        if isinstance(file, str):  # Default PDB (path as string)
+            pdb_file_path = file
+        else:  # Uploaded or fetched PDB file
             pdb_content = file.read()
+            
+            # Ensure we handle both uploaded and default files correctly
             if isinstance(pdb_content, bytes):  # If binary, decode it
                 pdb_content = pdb_content.decode("latin-1")
-            pdb_io = io.StringIO(pdb_content)
-            protein_names.append(file.name.replace(".pdb", ""))  # Extract protein name
+
+            pdb_io = io.StringIO(pdb_content)  # Create a StringIO object
+            pdb_file_path = pdb_io  # Use this for parsing
 
         # Extract sequence
-        seq = extract_sequence_from_pdb(pdb_io)
+        seq = extract_sequence_from_pdb(pdb_file_path)
+        
+        # Extract protein name
+        if hasattr(file, "name"):  # If name exists (uploaded or default)
+            protein_name = file.name.replace(".pdb", "")
+        else:
+            protein_name = "Unknown Protein"  # Fallback
+        
+        protein_names.append(protein_name)
 
         # Compute embeddings
         inputs = tokenizer(seq, return_tensors="pt", add_special_tokens=True)
         with torch.no_grad():
             outputs = model(**inputs)
-
+        
         embedding = outputs.last_hidden_state.mean(dim=1).detach().numpy()  # Get protein-level embedding
         embeddings_list.append(embedding)
 
