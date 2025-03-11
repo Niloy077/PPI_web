@@ -32,7 +32,7 @@ def extract_sequence_from_pdb(pdb_file):
                     seq += seq1(residue.get_resname())
     return seq
 
-# Default PDB files (Stored in a local folder "data/")
+# Default PDB files (Stored as URLs)
 DEFAULT_PDB_FILES = {
     "Protein 1 (1A3N)": "https://files.rcsb.org/download/1A3N.pdb",
     "Protein 2 (4QQI)": "https://files.rcsb.org/download/4QQI.pdb",
@@ -49,7 +49,7 @@ def fetch_pdb_from_url(url):
         st.error(f"Failed to fetch PDB from {url}")
         return None
 
-# Streamlit UI
+# UI: Title and Upload Section
 st.title("🔬 Protein Embedding Visualizer")
 st.subheader("Compare protein structures effortlessly! 🚀")
 st.write("Upload your own **PDB files**, or select from our default proteins.")
@@ -61,9 +61,9 @@ use_default = st.checkbox("Use default PDB files")
 if use_default:
     selected_pdbs = st.multiselect("Select default proteins:", list(DEFAULT_PDB_FILES.keys()))  
     if selected_pdbs:
-        default_files = [fetch_pdb_from_url(DEFAULT_PDB_FILES[pdb]) for pdb in selected_pdbs]
-        uploaded_files = uploaded_files or []  # Ensure uploaded_files is a list
-        uploaded_files.extend(filter(None, default_files))  # Remove failed fetches
+        fetched_files = [fetch_pdb_from_url(DEFAULT_PDB_FILES[pdb]) for pdb in selected_pdbs]
+        uploaded_files = uploaded_files or []  # Ensure list is initialized
+        uploaded_files.extend([f for f in fetched_files if f])  # Add only successful fetches
 
 if uploaded_files:
     embeddings_list = []
@@ -73,15 +73,16 @@ if uploaded_files:
         # Read PDB file from user upload or default file
         if isinstance(file, io.StringIO):  # Default PDB file fetched from URL
             pdb_io = file
+            protein_names.append("Default Protein")  # Assign a generic name
         else:  # Uploaded PDB file
             pdb_content = file.read()
             if isinstance(pdb_content, bytes):  # If binary, decode it
                 pdb_content = pdb_content.decode("latin-1")
             pdb_io = io.StringIO(pdb_content)
+            protein_names.append(file.name.replace(".pdb", ""))  # Extract protein name
 
         # Extract sequence
         seq = extract_sequence_from_pdb(pdb_io)
-        protein_names.append(file.name.replace(".pdb", ""))  # Extract protein name
 
         # Compute embeddings
         inputs = tokenizer(seq, return_tensors="pt", add_special_tokens=True)
