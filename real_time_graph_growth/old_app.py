@@ -3,20 +3,20 @@ import pandas as pd
 import networkx as nx
 from pyvis.network import Network
 from streamlit.components.v1 import html
-import pickle
 
 # Load data
 @st.cache_data
 def load_data():
-    try:
-        ppi_data = pd.read_csv("new_dataset.csv")
-        # Load embeddings from Pickle file
-        with open("protbert_embeddings.pkl", "rb") as f:
-            embeddings = pickle.load(f)
-        return ppi_data, embeddings
-    except FileNotFoundError as e:
-        st.error(f"Error loading data: {e}. Please ensure 'new_dataset.csv' and 'protbert_embeddings.pkl' are in the 'real_time_graph_growth' folder.")
-        return None, None
+    ppi_data = pd.read_csv("new_dataset.csv")
+    embeddings_data = pd.read_csv("protein_embeddings.csv")
+    
+    # Extract embedding dimensions (Dim_0 to Dim_1023)
+    embedding_cols = [col for col in embeddings_data.columns if col.startswith("Dim_")]
+    embeddings = {}
+    for _, row in embeddings_data.iterrows():
+        embedding = row[embedding_cols].values.tolist()  # Convert dimensions to a list
+        embeddings[row["Protein_ID"]] = embedding
+    return ppi_data, embeddings
 
 # Build the full PPI graph
 @st.cache_resource
@@ -25,14 +25,9 @@ def build_graph(ppi_data, embeddings):
     for _, row in ppi_data.iterrows():
         G.add_edge(row["protein1"], row["protein2"], 
                    weight=row["combined_score"],
-                   confidence_level=row["confidence_level"],
-                   confidence_level_encoded=row["confidence_level_encoded"],
-                   # Store available evidence for tooltips
-                   fusion=row["fusion"],
-                   cooccurence=row["cooccurence"],
-                   homology=row["homology"],
+                   # Store additional evidence for tooltips
+                   neighborhood=row["neighborhood"],
                    coexpression=row["coexpression"],
-                   experiments=row["experiments"],
                    database=row["database"],
                    textmining=row["textmining"])
     for protein in G.nodes():
@@ -59,19 +54,17 @@ def visualize_graph(subgraph, filename="graph.html"):
         emb_display = emb[:5] if isinstance(emb, list) else emb
         net.add_node(node, label=node, title=f"Protein: {node}\nEmbedding (first 5 dims): {emb_display}")
     
-    # Add edges with weights and confidence-based styling
+    # Add edges with weights and score-based styling
     for edge in subgraph.edges(data=True):
         weight = edge[2]["weight"]
-        confidence_level = edge[2]["confidence_level"]
-        confidence_level_encoded = edge[2]["confidence_level_encoded"]
-        # Color edges based on confidence_level_encoded (1, 2, 3)
-        color = "green" if confidence_level_encoded == 3 else "orange" if confidence_level_encoded == 2 else "gray"
-        # Scale edge thickness based on combined_score (assuming 0-1 scale)
-        scaled_weight = weight * 50  # Increased scaling factor for visibility
+        # Normalize combined_score (assuming 0-1000 scale) for visualization
+        normalized_weight = weight / 1000.0
+        # Color edges based on combined_score
+        color = "green" if weight >= 800 else "orange" if weight >= 600 else "gray"
         net.add_edge(edge[0], edge[1], 
-                     value=scaled_weight,  # Use for edge thickness
+                     value=normalized_weight * 10,  # Scale for visibility
                      color=color,
-                     title=f"Combined Score: {weight}\nConfidence Level: {confidence_level}\nConfidence Encoded: {confidence_level_encoded}\nFusion: {edge[2]['fusion']}\nCooccurence: {edge[2]['cooccurence']}\nHomology: {edge[2]['homology']}\nCoexpression: {edge[2]['coexpression']}\nExperiments: {edge[2]['experiments']}\nDatabase: {edge[2]['database']}\nTextmining: {edge[2]['textmining']}")
+                     title=f"Combined Score: {weight}\nNeighborhood: {edge[2]['neighborhood']}\nCoexpression: {edge[2]['coexpression']}\nDatabase: {edge[2]['database']}\nTextmining: {edge[2]['textmining']}")
     
     # Physics for layout
     net.set_options("""
@@ -98,17 +91,11 @@ st.title("Real-Time PPI Graph Explorer")
 
 # Load data and graph
 ppi_data, embeddings = load_data()
-
-# Check if data loaded successfully
-if ppi_data is None or embeddings is None:
-    st.stop()
-
 G = build_graph(ppi_data, embeddings)
 
 # Initialize session state
 if "selected_proteins" not in st.session_state:
-    # Use the first protein from ppi_data as the starting point
-    st.session_state.selected_proteins = [ppi_data["protein1"].iloc[0]]
+    st.session_state.selected_proteins = ["9606.ENSP00000000233"]  # Start with the first protein
 
 # Display current selected proteins
 st.write("Currently exploring:", ", ".join(st.session_state.selected_proteins))
@@ -124,7 +111,7 @@ if new_protein != "None":
 
 # Reset button
 if st.button("Reset"):
-    st.session_state.selected_proteins = [ppi_data["protein1"].iloc[0]]
+    st.session_state.selected_proteins = ["9606.ENSP00000000233"]
     st.rerun()
 
 # Generate and display the subgraph
