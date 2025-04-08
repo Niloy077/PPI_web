@@ -4,46 +4,18 @@ import networkx as nx
 from pyvis.network import Network
 from streamlit.components.v1 import html
 import pickle
-import requests
-import io
 
 # Load data
 @st.cache_data
 def load_data():
     try:
-        # Load the CSV from an S3 URL
-        csv_url = "https://www.dropbox.com/scl/fi/lcbglaqen9nwouc55yckt/new_dataset.csv?rlkey=alidm2r5boqo7qtdyb0e5vxid&st=ub7g08fn&dl=1"  # Replace with your S3 URL
-        st.text("Downloading PPI data... This may take a moment.")
-        response_csv = requests.get(csv_url)
-        response_csv.raise_for_status()  # Check for request errors
-        if response_csv.status_code == 200:
-            st.success("PPI data downloaded successfully!")
-        ppi_data = pd.read_csv(io.StringIO(response_csv.text))
-        
-        # Verify that ppi_data is not empty
-        if ppi_data.empty:
-            st.error("PPI data is empty. Please check the CSV file.")
-            return None, None
-        st.info(f"Loaded {len(ppi_data)} interactions from new_dataset.csv.")
-        
-        # Load the Pickle file from an S3 URL
-        pkl_url = "https://drive.google.com/uc?export=download&id=14OQ_urDTncZsskkVPWx20yGwewwn-6_i"  # Replace with your S3 URL
-        st.text("Downloading embeddings... This may take a moment.")
-        response_pkl = requests.get(pkl_url)
-        response_pkl.raise_for_status()  # Check for request errors
-        if response_pkl.status_code == 200:
-            st.success("Embeddings downloaded successfully!")
-        embeddings = pickle.load(io.BytesIO(response_pkl.content))
-        
-        # Verify that embeddings is not empty
-        if not embeddings:
-            st.error("Embeddings data is empty. Please check the Pickle file.")
-            return None, None
-        st.info(f"Loaded embeddings for {len(embeddings)} proteins from protbert_embeddings.pkl.")
-        
+        ppi_data = pd.read_csv("new_dataset.csv")
+        # Load embeddings from Pickle file
+        with open("protbert_embeddings.pkl", "rb") as f:
+            embeddings = pickle.load(f)
         return ppi_data, embeddings
-    except Exception as e:
-        st.error(f"Error loading data: {e}. Please check the URLs or file accessibility.")
+    except FileNotFoundError as e:
+        st.error(f"Error loading data: {e}. Please ensure 'new_dataset.csv' and 'protbert_embeddings.pkl' are in the 'real_time_graph_growth' folder.")
         return None, None
 
 # Build the full PPI graph
